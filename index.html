@@ -48,6 +48,12 @@
 
         .line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
         .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+        
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+        }
+        .animate-spin { animation: spin 1s linear infinite; }
     </style>
 </head>
 <body class="text-slate-900 pb-20">
@@ -217,8 +223,8 @@
                     </div>
 
                     <div class="pt-4 flex flex-col gap-3">
-                        <button onclick="saveSettings()" class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-slate-800 transition-all shadow-lg">
-                            Apply & Connect
+                        <button id="save-settings-btn" onclick="saveSettings()" class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-slate-800 transition-all shadow-lg flex items-center justify-center gap-2">
+                            <span>Apply & Connect</span>
                         </button>
                         <button onclick="clearAllData()" class="w-full bg-white text-red-500 border border-red-100 py-3 rounded-xl text-sm font-semibold hover:bg-red-50 transition-all">
                             Logout & Clear Cookies
@@ -340,18 +346,78 @@
             window.scrollTo({ top: 0, behavior: 'smooth' });
         }
 
-        function saveSettings() {
-            config = {
-                token: document.getElementById('gh-token').value.trim(),
-                user: document.getElementById('gh-user').value.trim(),
-                repo: document.getElementById('gh-repo').value.trim(),
-                kitchenId: document.getElementById('kitchen-id').value.trim() || 'default_user'
-            };
+        async function saveSettings() {
+            const btn = document.getElementById('save-settings-btn');
+            const originalContent = btn.innerHTML;
             
-            setConfigCookie(config);
-            updateSyncUI();
-            alert('Settings Saved! Profiles updated.');
-            showSection('search');
+            const newToken = document.getElementById('gh-token').value.trim();
+            const newUser = document.getElementById('gh-user').value.trim();
+            const newRepo = document.getElementById('gh-repo').value.trim();
+            const newKitchenId = document.getElementById('kitchen-id').value.trim() || 'default_user';
+
+            if(!newToken || !newUser || !newRepo) {
+                alert("Please fill in Token, Username, and Repository to enable cloud sync.");
+                return;
+            }
+
+            btn.disabled = true;
+            btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Validating...`;
+            lucide.createIcons();
+
+            try {
+                // 1. Check if repo exists
+                const repoRes = await fetch(`https://api.github.com/repos/${newUser}/${newRepo}`, {
+                    headers: { 'Authorization': `token ${newToken}` }
+                });
+
+                if (repoRes.status === 404) {
+                    // 2. Repo doesn't exist, try to create it
+                    btn.innerHTML = `<i data-lucide="loader-2" class="w-5 h-5 animate-spin"></i> Creating Repo...`;
+                    lucide.createIcons();
+                    
+                    const createRes = await fetch(`https://api.github.com/user/repos`, {
+                        method: 'POST',
+                        headers: { 
+                            'Authorization': `token ${newToken}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            name: newRepo,
+                            description: "RecipeHub Cloud Storage",
+                            private: false,
+                            auto_init: true
+                        })
+                    });
+
+                    if (!createRes.ok) {
+                        const error = await createRes.json();
+                        throw new Error(`Failed to create repository: ${error.message}`);
+                    }
+                    alert(`Repository "${newRepo}" was not found and has been created for you!`);
+                } else if (!repoRes.ok) {
+                    const error = await repoRes.json();
+                    throw new Error(`GitHub Error: ${error.message}`);
+                }
+
+                // 3. Update config and save
+                config = {
+                    token: newToken,
+                    user: newUser,
+                    repo: newRepo,
+                    kitchenId: newKitchenId
+                };
+                
+                setConfigCookie(config);
+                updateSyncUI();
+                alert('Connection Successful! Your kitchen is now synced.');
+                showSection('search');
+            } catch (err) {
+                alert(err.message);
+            } finally {
+                btn.disabled = false;
+                btn.innerHTML = originalContent;
+                lucide.createIcons();
+            }
         }
 
         function clearAllData() {
@@ -573,7 +639,9 @@
             fetch(`https://api.github.com/repos/${config.user}/${config.repo}/contents/${config.kitchenId}_favorites.json`, {
                 headers: { 'Authorization': `token ${config.token}` }
             }).then(r => r.json()).then(d => {
-                favoriteRecipes = JSON.parse(decodeURIComponent(escape(atob(d.content))));
+                if (d.content) {
+                    favoriteRecipes = JSON.parse(decodeURIComponent(escape(atob(d.content))));
+                }
             }).catch(() => {});
         }
 
