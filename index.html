@@ -1,0 +1,583 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RecipeHub | Professional Kitchen Manager</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap');
+        
+        body { 
+            font-family: 'Plus Jakarta Sans', sans-serif; 
+            background-color: #fdfdfd; 
+        }
+        
+        .glass { 
+            background: rgba(255, 255, 255, 0.8); 
+            backdrop-filter: blur(12px); 
+            -webkit-backdrop-filter: blur(12px);
+        }
+
+        .recipe-card {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        
+        .recipe-card:hover {
+            transform: translateY(-6px);
+            box-shadow: 0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #e2e8f0;
+            border-radius: 10px;
+        }
+
+        .nav-btn.active {
+            background-color: white;
+            box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1);
+            color: #f97316;
+        }
+
+        .line-clamp-1 { display: -webkit-box; -webkit-line-clamp: 1; -webkit-box-orient: vertical; overflow: hidden; }
+        .line-clamp-2 { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+    </style>
+</head>
+<body class="text-slate-900 pb-20">
+
+    <!-- Navigation -->
+    <nav class="sticky top-0 z-40 glass border-b border-gray-100 px-4 py-4">
+        <div class="max-w-6xl mx-auto flex justify-between items-center">
+            <div class="flex items-center gap-3 cursor-pointer" onclick="showSection('search')">
+                <div class="bg-gradient-to-br from-orange-400 to-red-500 p-2.5 rounded-2xl text-white shadow-lg shadow-orange-200">
+                    <i data-lucide="utensils-crosses" class="w-6 h-6"></i>
+                </div>
+                <div class="hidden xs:block">
+                    <h1 class="text-xl font-bold tracking-tight leading-none">RecipeHub</h1>
+                    <span class="text-[10px] uppercase tracking-widest font-semibold text-orange-500">Premium Kitchen</span>
+                </div>
+            </div>
+            
+            <div class="flex items-center bg-gray-100/80 p-1 rounded-2xl">
+                <button onclick="showSection('search')" id="nav-search" class="nav-btn px-4 py-2 rounded-xl flex items-center gap-2 transition-all">
+                    <i data-lucide="search" class="w-4 h-4"></i>
+                    <span class="hidden md:inline text-sm font-medium">Explore</span>
+                </button>
+                <button onclick="showSection('my-recipes')" id="nav-my-recipes" class="nav-btn px-4 py-2 rounded-xl flex items-center gap-2 transition-all">
+                    <i data-lucide="book" class="w-4 h-4"></i>
+                    <span class="hidden md:inline text-sm font-medium">My Cabinet</span>
+                </button>
+                <button onclick="showSection('favorites')" id="nav-favorites" class="nav-btn px-4 py-2 rounded-xl flex items-center gap-2 transition-all">
+                    <i data-lucide="heart" class="w-4 h-4"></i>
+                    <span class="hidden md:inline text-sm font-medium">Favorites</span>
+                </button>
+                <button onclick="showSection('settings')" id="nav-settings" class="nav-btn px-4 py-2 rounded-xl flex items-center gap-2 transition-all">
+                    <i data-lucide="settings" class="w-4 h-4"></i>
+                    <span class="hidden md:inline text-sm font-medium">Settings</span>
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <main class="max-w-6xl mx-auto p-4 md:p-8">
+        
+        <!-- Search Section -->
+        <section id="section-search" class="space-y-8">
+            <div class="text-center max-w-2xl mx-auto space-y-4 mb-10">
+                <h2 class="text-4xl font-extrabold tracking-tight text-slate-900">What are we cooking today?</h2>
+                <p class="text-slate-500">Search over 10,000+ recipes globally or browse your favorites.</p>
+                <div class="relative group">
+                    <input type="text" id="search-input" placeholder="Search ingredients, dishes..." 
+                        class="w-full pl-12 pr-32 py-4 bg-white border-2 border-gray-100 rounded-2xl focus:ring-4 focus:ring-orange-100 focus:border-orange-500 outline-none transition-all shadow-sm group-hover:border-gray-200">
+                    <i data-lucide="search" class="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                    <button onclick="searchGlobal()" class="absolute right-2 top-2 bottom-2 bg-orange-500 text-white px-6 rounded-xl font-bold hover:bg-orange-600 transition-colors shadow-md">
+                        Find
+                    </button>
+                </div>
+            </div>
+            
+            <div id="search-results" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+                <!-- Search results injected here -->
+            </div>
+        </section>
+
+        <!-- My Recipes Section -->
+        <section id="section-my-recipes" class="hidden space-y-8">
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                    <h2 class="text-3xl font-bold">My Kitchen Cabinet</h2>
+                    <p class="text-slate-500">Your personal collection of culinary masterpieces.</p>
+                </div>
+                <button onclick="showSection('add')" class="bg-slate-900 text-white px-6 py-3 rounded-2xl flex items-center gap-2 hover:bg-slate-800 transition-all shadow-xl">
+                    <i data-lucide="plus" class="w-5 h-5"></i> Create New Recipe
+                </button>
+            </div>
+            <div id="local-recipes" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+        </section>
+
+        <!-- Favorites Section -->
+        <section id="section-favorites" class="hidden space-y-8">
+            <div>
+                <h2 class="text-3xl font-bold">Saved Favorites</h2>
+                <p class="text-slate-500">Recipes you've loved from across the hub.</p>
+            </div>
+            <div id="favorite-recipes" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6"></div>
+        </section>
+
+        <!-- Add Recipe Form -->
+        <section id="section-add" class="hidden max-w-3xl mx-auto">
+            <div class="bg-white p-8 rounded-3xl shadow-xl border border-gray-100">
+                <div class="flex items-center gap-4 mb-8">
+                    <button onclick="showSection('my-recipes')" class="p-2 hover:bg-gray-100 rounded-full transition">
+                        <i data-lucide="arrow-left"></i>
+                    </button>
+                    <h2 class="text-2xl font-bold">New Creation</h2>
+                </div>
+                
+                <form id="recipe-form" class="space-y-6">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="space-y-4">
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">Recipe Name</label>
+                                <input type="text" id="form-name" placeholder="Grandma's Secret Pasta" required 
+                                    class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-orange-500 transition">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-semibold text-slate-700 mb-2">Image URL (Optional)</label>
+                                <input type="url" id="form-image" placeholder="https://images.unsplash.com/..." 
+                                    class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-orange-500 transition">
+                            </div>
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-slate-700 mb-2">Ingredients (one per line)</label>
+                            <textarea id="form-ingredients" rows="5" placeholder="2 cups Flour&#10;3 Eggs&#10;Pinch of Salt" required 
+                                class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-orange-500 transition"></textarea>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-semibold text-slate-700 mb-2">Preparation Steps</label>
+                        <textarea id="form-instructions" rows="6" placeholder="1. Boil the water...&#10;2. Add pasta..." required 
+                            class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-orange-500 transition"></textarea>
+                    </div>
+                    <button type="submit" class="w-full bg-orange-500 text-white py-4 rounded-2xl font-bold text-lg hover:bg-orange-600 transition-all shadow-lg shadow-orange-100">
+                        Save to Cloud Cabinet
+                    </button>
+                </form>
+            </div>
+        </section>
+
+        <!-- Settings Section -->
+        <section id="section-settings" class="hidden max-w-xl mx-auto">
+            <div class="bg-white p-8 rounded-3xl shadow-xl border border-gray-100">
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center gap-3">
+                        <div class="p-3 bg-slate-100 rounded-2xl">
+                            <i data-lucide="settings" class="w-6 h-6 text-slate-600"></i>
+                        </div>
+                        <div>
+                            <h2 class="text-2xl font-bold">Configuration</h2>
+                            <p class="text-xs text-slate-400 font-medium uppercase tracking-widest">Multi-User Sync</p>
+                        </div>
+                    </div>
+                    <div id="sync-status" class="flex items-center gap-2 px-3 py-1 bg-red-50 text-red-500 rounded-full text-xs font-bold">
+                        <div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div>
+                        Disconnected
+                    </div>
+                </div>
+
+                <div class="space-y-6">
+                    <div class="p-4 bg-orange-50 border border-orange-100 rounded-2xl">
+                        <label class="block text-xs font-bold text-orange-600 uppercase tracking-widest mb-2">Kitchen ID (User Profile)</label>
+                        <input type="text" id="kitchen-id" placeholder="e.g. chef_john_123" class="w-full px-4 py-3 bg-white border border-orange-200 rounded-xl outline-none focus:ring-2 focus:ring-orange-500 font-bold text-orange-900">
+                        <p class="text-[10px] text-orange-400 mt-2">Use a unique ID to keep your recipes separate from other users in the same repository.</p>
+                    </div>
+
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">GitHub Personal Access Token</label>
+                            <input type="password" id="gh-token" placeholder="ghp_xxxxxxxxxxxx" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Username</label>
+                                <input type="text" id="gh-user" placeholder="octocat" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-slate-400 uppercase tracking-widest mb-2">Repository</label>
+                                <input type="text" id="gh-repo" placeholder="my-recipes" class="w-full px-4 py-3 bg-slate-50 border border-slate-200 rounded-xl outline-none focus:ring-2 focus:ring-blue-500">
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="pt-4 flex flex-col gap-3">
+                        <button onclick="saveSettings()" class="w-full bg-slate-900 text-white py-4 rounded-xl font-bold hover:bg-slate-800 transition-all shadow-lg">
+                            Apply & Connect
+                        </button>
+                        <button onclick="clearAllData()" class="w-full bg-white text-red-500 border border-red-100 py-3 rounded-xl text-sm font-semibold hover:bg-red-50 transition-all">
+                            Logout & Clear Cookies
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+    <!-- Recipe Detail Modal -->
+    <div id="recipe-modal" class="fixed inset-0 z-50 hidden flex items-center justify-center p-4">
+        <div class="absolute inset-0 bg-slate-900/60 backdrop-blur-sm" onclick="closeModal()"></div>
+        <div class="bg-white w-full max-w-4xl max-h-[90vh] rounded-3xl overflow-hidden shadow-2xl relative flex flex-col md:flex-row">
+            <button onclick="closeModal()" class="absolute top-4 right-4 z-10 bg-white/80 p-2 rounded-full hover:bg-white transition shadow-lg">
+                <i data-lucide="x" class="w-6 h-6"></i>
+            </button>
+            
+            <div class="w-full md:w-2/5 h-64 md:h-auto overflow-hidden">
+                <img id="modal-image" src="" alt="" class="w-full h-full object-cover">
+            </div>
+            
+            <div class="w-full md:w-3/5 p-6 md:p-10 overflow-y-auto custom-scrollbar">
+                <div class="flex justify-between items-start mb-4">
+                    <div id="modal-badge" class="inline-block px-3 py-1 bg-orange-100 text-orange-600 rounded-full text-xs font-bold uppercase tracking-wider">Category</div>
+                    <button id="modal-fav-btn" class="p-2 hover:bg-gray-100 rounded-full transition">
+                        <i data-lucide="heart" class="w-6 h-6"></i>
+                    </button>
+                </div>
+                <h2 id="modal-title" class="text-3xl font-extrabold text-slate-900 mb-6 leading-tight">Recipe Title</h2>
+                
+                <div class="space-y-8">
+                    <div>
+                        <h3 class="text-lg font-bold flex items-center gap-2 mb-4">
+                            <i data-lucide="shopping-basket" class="w-5 h-5 text-orange-500"></i>
+                            Ingredients
+                        </h3>
+                        <ul id="modal-ingredients" class="grid grid-cols-1 gap-2 text-slate-600 list-disc list-inside"></ul>
+                    </div>
+                    
+                    <div>
+                        <h3 class="text-lg font-bold flex items-center gap-2 mb-4">
+                            <i data-lucide="chef-hat" class="w-5 h-5 text-orange-500"></i>
+                            Instructions
+                        </h3>
+                        <div id="modal-instructions" class="text-slate-600 leading-relaxed whitespace-pre-line"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Cookie Helpers
+        const COOKIE_NAME = 'recipehub_config';
+
+        function setConfigCookie(config) {
+            const date = new Date();
+            date.setTime(date.getTime() + (30 * 24 * 60 * 60 * 1000)); // 30 days
+            const expires = "; expires=" + date.toUTCString();
+            document.cookie = COOKIE_NAME + "=" + btoa(JSON.stringify(config)) + expires + "; path=/";
+        }
+
+        function getConfigCookie() {
+            const nameEQ = COOKIE_NAME + "=";
+            const ca = document.cookie.split(';');
+            for(let i=0; i < ca.length; i++) {
+                let c = ca[i];
+                while (c.charAt(0) == ' ') c = c.substring(1, c.length);
+                if (c.indexOf(nameEQ) == 0) {
+                    try {
+                        return JSON.parse(atob(c.substring(nameEQ.length, c.length)));
+                    } catch(e) { return null; }
+                }
+            }
+            return null;
+        }
+
+        function eraseCookie(name) {
+            document.cookie = name+'=; Max-Age=-99999999; path=/';
+        }
+
+        // State Management
+        let myRecipes = [];
+        let favoriteRecipes = [];
+        let config = getConfigCookie() || {
+            token: '',
+            user: '',
+            repo: '',
+            kitchenId: 'default_user'
+        };
+
+        lucide.createIcons();
+
+        function updateSyncUI() {
+            const status = document.getElementById('sync-status');
+            if(config.token && config.user && config.repo) {
+                status.className = "flex items-center gap-2 px-3 py-1 bg-green-50 text-green-600 rounded-full text-xs font-bold";
+                status.innerHTML = `<div class="w-2 h-2 rounded-full bg-green-500"></div> Connected: ${config.kitchenId}`;
+            } else {
+                status.className = "flex items-center gap-2 px-3 py-1 bg-red-50 text-red-500 rounded-full text-xs font-bold";
+                status.innerHTML = `<div class="w-2 h-2 rounded-full bg-red-500 animate-pulse"></div> Disconnected`;
+            }
+        }
+
+        function showSection(id) {
+            ['search', 'my-recipes', 'favorites', 'add', 'settings'].forEach(s => {
+                document.getElementById(`section-${s}`).classList.add('hidden');
+                document.getElementById(`nav-${s}`)?.classList.remove('active');
+            });
+            
+            document.getElementById(`section-${id}`).classList.remove('hidden');
+            const activeBtn = document.getElementById(`nav-${id}`);
+            if(activeBtn) activeBtn.classList.add('active');
+            
+            if(id === 'my-recipes') loadCloudData(`${config.kitchenId}_recipes.json`, 'local-recipes', 'Personal');
+            if(id === 'favorites') loadCloudData(`${config.kitchenId}_favorites.json`, 'favorite-recipes', 'Favorite');
+            if(id === 'settings') updateSyncUI();
+            
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        }
+
+        function saveSettings() {
+            config = {
+                token: document.getElementById('gh-token').value.trim(),
+                user: document.getElementById('gh-user').value.trim(),
+                repo: document.getElementById('gh-repo').value.trim(),
+                kitchenId: document.getElementById('kitchen-id').value.trim() || 'default_user'
+            };
+            
+            setConfigCookie(config);
+            updateSyncUI();
+            alert('Settings Saved! Profiles updated.');
+            showSection('search');
+        }
+
+        function clearAllData() {
+            if(confirm('Are you sure you want to logout and clear all local cookies?')) {
+                eraseCookie(COOKIE_NAME);
+                location.reload();
+            }
+        }
+
+        // Search Logic
+        async function searchGlobal() {
+            const query = document.getElementById('search-input').value;
+            if(!query) return;
+            
+            const container = document.getElementById('search-results');
+            container.innerHTML = `<div class="col-span-full text-center py-20"><div class="animate-spin inline-block mb-4"><i data-lucide="loader-2"></i></div><p>Searching the world...</p></div>`;
+            lucide.createIcons();
+            
+            try {
+                const res = await fetch(`https://www.themealdb.com/api/json/v1/1/search.php?s=${query}`);
+                const data = await res.json();
+                container.innerHTML = '';
+                
+                if(!data.meals) {
+                    container.innerHTML = `<div class="col-span-full text-center py-20 text-slate-400">No recipes found for "${query}"</div>`;
+                    return;
+                }
+
+                data.meals.forEach(meal => {
+                    const recipe = {
+                        id: 'global-' + meal.idMeal,
+                        name: meal.strMeal,
+                        image: meal.strMealThumb,
+                        category: meal.strCategory,
+                        instructions: meal.strInstructions,
+                        ingredients: []
+                    };
+                    for(let i=1; i<=20; i++) {
+                        if(meal[`strIngredient${i}`]) recipe.ingredients.push(`${meal[`strMeasure${i}`]} ${meal[`strIngredient${i}`]}`);
+                    }
+                    container.appendChild(createRecipeCard(recipe));
+                });
+                lucide.createIcons();
+            } catch (e) { alert('Search failed.'); }
+        }
+
+        function createRecipeCard(recipe) {
+            const div = document.createElement('div');
+            div.className = "bg-white rounded-3xl overflow-hidden border border-gray-100 recipe-card cursor-pointer flex flex-col";
+            const isFav = favoriteRecipes.some(f => f.id === recipe.id);
+            
+            div.innerHTML = `
+                <div class="relative h-44 overflow-hidden">
+                    <img src="${recipe.image || 'https://images.unsplash.com/photo-1495195129352-aec325a55b65?w=500'}" class="w-full h-full object-cover">
+                    <button onclick="event.stopPropagation(); toggleFavorite('${btoa(unescape(encodeURIComponent(JSON.stringify(recipe))))}')" 
+                        class="absolute top-3 right-3 p-2 bg-white/90 backdrop-blur rounded-full shadow-sm hover:scale-110 transition-transform ${isFav ? 'text-red-500' : 'text-slate-400'}">
+                        <i data-lucide="heart" class="w-4 h-4 ${isFav ? 'fill-red-500' : ''}"></i>
+                    </button>
+                </div>
+                <div class="p-5 flex-1 flex flex-col">
+                    <span class="text-[10px] font-bold text-orange-500 uppercase tracking-widest mb-1">${recipe.category || 'Personal'}</span>
+                    <h3 class="font-bold text-slate-800 line-clamp-1 mb-2">${recipe.name}</h3>
+                    <p class="text-xs text-slate-400 line-clamp-2 mb-4">${recipe.instructions}</p>
+                </div>
+            `;
+            div.onclick = () => openModal(recipe);
+            return div;
+        }
+
+        async function toggleFavorite(recipeDataEncoded) {
+            const recipe = JSON.parse(decodeURIComponent(escape(atob(recipeDataEncoded))));
+            const index = favoriteRecipes.findIndex(f => f.id === recipe.id);
+            
+            if(index > -1) {
+                favoriteRecipes.splice(index, 1);
+            } else {
+                favoriteRecipes.unshift(recipe);
+            }
+            
+            if(config.token) {
+                await syncToCloud(`${config.kitchenId}_favorites.json`, favoriteRecipes);
+            } else {
+                alert("Connect your GitHub in Settings to save favorites!");
+                showSection('settings');
+                return;
+            }
+
+            if(!document.getElementById('section-favorites').classList.contains('hidden')) showSection('favorites');
+            if(!document.getElementById('section-search').classList.contains('hidden')) searchGlobal();
+            lucide.createIcons();
+        }
+
+        // Cloud Storage Logic
+        async function loadCloudData(filename, containerId, type) {
+            if(!config.token) {
+                if(containerId === 'local-recipes') showSection('settings');
+                return;
+            }
+            
+            const container = document.getElementById(containerId);
+            container.innerHTML = `<div class="col-span-full text-center py-20"><div class="animate-spin inline-block"><i data-lucide="loader-2"></i></div></div>`;
+            lucide.createIcons();
+
+            try {
+                const res = await fetch(`https://api.github.com/repos/${config.user}/${config.repo}/contents/${filename}`, {
+                    headers: { 'Authorization': `token ${config.token}` }
+                });
+                
+                if(res.ok) {
+                    const data = await res.json();
+                    const content = JSON.parse(decodeURIComponent(escape(atob(data.content))));
+                    if(filename.includes('recipes.json')) myRecipes = content;
+                    if(filename.includes('favorites.json')) favoriteRecipes = content;
+                    
+                    container.innerHTML = '';
+                    if(content.length === 0) throw new Error('Empty');
+                    content.forEach(r => container.appendChild(createRecipeCard(r)));
+                } else {
+                    container.innerHTML = `<div class="col-span-full text-center py-20 border-2 border-dashed rounded-3xl text-slate-400">No ${type} recipes found for profile: ${config.kitchenId}</div>`;
+                }
+                lucide.createIcons();
+            } catch (e) {
+                container.innerHTML = `<div class="col-span-full text-center py-20 border-2 border-dashed rounded-3xl text-slate-400">Profile "${config.kitchenId}" is empty or not yet initialized.</div>`;
+            }
+        }
+
+        async function syncToCloud(filename, dataArray) {
+            if(!config.token) return;
+
+            let sha = null;
+            try {
+                const current = await fetch(`https://api.github.com/repos/${config.user}/${config.repo}/contents/${filename}`, {
+                    headers: { 'Authorization': `token ${config.token}` }
+                });
+                if(current.ok) {
+                    const fileData = await current.json();
+                    sha = fileData.sha;
+                }
+            } catch(e) {}
+
+            await fetch(`https://api.github.com/repos/${config.user}/${config.repo}/contents/${filename}`, {
+                method: 'PUT',
+                headers: { 'Authorization': `token ${config.token}`, 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    message: `Sync ${filename} for ${config.kitchenId}`,
+                    content: btoa(unescape(encodeURIComponent(JSON.stringify(dataArray, null, 2)))),
+                    sha: sha
+                })
+            });
+        }
+
+        // Modal Logic
+        function openModal(recipe) {
+            const modal = document.getElementById('recipe-modal');
+            const isFav = favoriteRecipes.some(f => f.id === recipe.id);
+            
+            document.getElementById('modal-image').src = recipe.image;
+            document.getElementById('modal-title').innerText = recipe.name;
+            document.getElementById('modal-badge').innerText = recipe.category || 'Personal';
+            document.getElementById('modal-instructions').innerText = recipe.instructions;
+            
+            const ingList = document.getElementById('modal-ingredients');
+            ingList.innerHTML = '';
+            const ings = Array.isArray(recipe.ingredients) ? recipe.ingredients : recipe.ingredients.split('\n');
+            ings.forEach(i => {
+                if(i.trim()) {
+                    const li = document.createElement('li');
+                    li.className = "text-sm py-1 border-b border-slate-50 last:border-0";
+                    li.innerText = i;
+                    ingList.appendChild(li);
+                }
+            });
+
+            const favBtn = document.getElementById('modal-fav-btn');
+            favBtn.className = `p-2 rounded-full transition ${isFav ? 'text-red-500 bg-red-50' : 'text-slate-400 hover:bg-gray-100'}`;
+            favBtn.onclick = () => { toggleFavorite(btoa(unescape(encodeURIComponent(JSON.stringify(recipe))))); closeModal(); };
+
+            modal.classList.remove('hidden');
+            document.body.style.overflow = 'hidden';
+            lucide.createIcons();
+        }
+
+        function closeModal() {
+            document.getElementById('recipe-modal').classList.add('hidden');
+            document.body.style.overflow = 'auto';
+        }
+
+        document.getElementById('recipe-form').onsubmit = async (e) => {
+            e.preventDefault();
+            if(!config.token) {
+                alert("Connect your GitHub in Settings to save recipes!");
+                showSection('settings');
+                return;
+            }
+
+            const newRecipe = {
+                id: 'local-' + Date.now(),
+                name: document.getElementById('form-name').value,
+                image: document.getElementById('form-image').value,
+                ingredients: document.getElementById('form-ingredients').value,
+                instructions: document.getElementById('form-instructions').value,
+                category: 'Personal'
+            };
+
+            myRecipes.unshift(newRecipe);
+            await syncToCloud(`${config.kitchenId}_recipes.json`, myRecipes);
+            document.getElementById('recipe-form').reset();
+            showSection('my-recipes');
+        };
+
+        // Init
+        document.getElementById('gh-token').value = config.token;
+        document.getElementById('gh-user').value = config.user;
+        document.getElementById('gh-repo').value = config.repo;
+        document.getElementById('kitchen-id').value = config.kitchenId;
+        
+        // Initial Fetch of favorites to sync heart icons
+        if(config.token) {
+            fetch(`https://api.github.com/repos/${config.user}/${config.repo}/contents/${config.kitchenId}_favorites.json`, {
+                headers: { 'Authorization': `token ${config.token}` }
+            }).then(r => r.json()).then(d => {
+                favoriteRecipes = JSON.parse(decodeURIComponent(escape(atob(d.content))));
+            }).catch(() => {});
+        }
+
+        showSection('search');
+    </script>
+</body>
+</html>
